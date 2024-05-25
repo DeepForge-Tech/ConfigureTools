@@ -90,7 +90,7 @@ class Linux:
             os.system(command)
         print(delimiter)
         print(
-            f"==> Successfully installed: {success_installed} package(s)\nFailed to install: {len(packages) - success_installed} package(s)"
+            f"==> Successfully installed: {success_installed} package(s)\n==> Failed to install: {len(packages) - success_installed} package(s)"
         )
         if len(failed_packages) > 0:
             print("==> Reinstall the packages:")
