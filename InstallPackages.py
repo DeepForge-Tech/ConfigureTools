@@ -208,7 +208,7 @@ class macOS:
             print(delimiter)
             print("==> Failed to install Homebrew")
             return 502
-        command = "brew install jsoncpp sqlite3 sqlite-utils fmt clang-format curl googletest gcc zlib cmake libzip openssl wget boost asio"
+        command = "brew install jsoncpp sqlite3 sqlite-utils fmt clang-format curl googletest gcc zlib cmake libzip openssl wget boost asio libssh2"
         result = os.system(command)
         check_build_tools = self.checkXcodeCommandLineToolset()
         if check_build_tools == True:
