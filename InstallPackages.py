@@ -9,10 +9,10 @@ class Linux:
 
     def __init__(self):
         self.YUM_PACKAGES = (
-            "epel-release boost-devel xterm wget make cmake gcc-c++ curl libcurl sqlite-devel openssl-devel gtest-devel gtest gmock gmock-devel nodejs postgresql libpqxx-devel postgresql-devel postgresql-libs"
+            "autoconf automake autoconf-archive epel-release pkg-config xterm wget make cmake gcc-c++ curl libcurl sqlite-devel openssl-devel gtest-devel gtest gmock gmock-devel nodejs postgresql libpqxx-devel postgresql-devel postgresql-libs"
         )
-        self.DEB_PACKAGES = "libboost-all-dev libasio-dev xterm wget openssl libssl-dev g++ gcc build-essential cmake make curl libcurl4-openssl-dev libjsoncpp-dev libfmt-dev libsqlite3-dev libgtest-dev googletest google-mock libgmock-dev libtbb-dev libzip-dev nodejs npm libpq-dev postgresql"
-        self.PACMAN_PACKAGES = "boost asio xterm wget jsoncpp gcc base-devel cmake gtest libcurl-compat libcurl-gnutls curl fmt sqlite sqlite-tcl openssl libzip nodejs npm postgresql postgresql-libs"
+        self.DEB_PACKAGES = "autoconf automake autoconf-archive linux-libc-dev pkg-config xterm wget openssl libssl-dev g++ gcc build-essential cmake make curl libcurl4-openssl-dev libjsoncpp-dev libfmt-dev libsqlite3-dev libgtest-dev googletest google-mock libgmock-dev libtbb-dev libzip-dev nodejs npm libpq-dev postgresql"
+        self.PACMAN_PACKAGES = "autoconf automake autoconf-archive pkg-config xterm wget jsoncpp gcc base-devel cmake gtest libcurl-compat libcurl-gnutls curl fmt sqlite sqlite-tcl openssl libzip nodejs npm postgresql postgresql-libs"
         # self.ZYPPER_PACKAGES = "xterm wget libcurl-devel gcc-c++ cmake gtest gmock zlib-devel fmt-devel sqlite3-devel jsoncpp-devel"
         self.distribution = platform.freedesktop_os_release()["NAME"]
         self.architecture = platform.architecture()[0]
@@ -61,28 +61,34 @@ class Linux:
         self.architecture = platform.machine().lower()
         if self.architecture == "x86_64" or self.architecture == "amd64":
             self.install_commands.update(
-                {"boost for x64(shared)": "vcpkg install boost:x64-linux asio:x64-linux"},
-                {"boost for x64(static)": "vcpkg install boost:x64-linux-static asio:x64-linux-static"},
-                {"openssl for x64(shared)": "vcpkg install openssl:x64-linux"},
-                {"openssl for x64(static)": "vcpkg install openssl:x64-linux-static"}
+                {
+                    "boost for x64(static)": "vcpkg install boost:x64-linux asio:x64-linux",
+                    "boost for x64(shared)": "vcpkg install boost:x64-linux-static asio:x64-linux-dynamic",
+                    "openssl for x64(static)": "vcpkg install openssl:x64-linux",
+                    "openssl for x64(shared)": "vcpkg install openssl:x64-linux-dynamic"
+                }
             )
         elif "86" in self.architecture:
             self.install_commands.update(
-                {"boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux"},
-                {"boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static"},
-                {"openssl for x86(shared)": "vcpkg install openssl:x86-linux"},
-                {"openssl for x86(static)": "vcpkg install openssl:x86-linux-static"}
+                {
+                    "boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux",
+                    "boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static",
+                    "openssl for x86(shared)": "vcpkg install openssl:x86-linux",
+                    "openssl for x86(static)": "vcpkg install openssl:x86-linux-static"
+                }
             )
         elif "arm" in self.architecture:
             self.install_commands.update(
-                {"boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux"},
-                {"boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static"},
-                {"boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux"},
-                {"boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static"},
-                {"openssl for arm64(shared)": "vcpkg install openssl:arm64-linux"},
-                {"openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static"},
-                {"openssl for arm(shared)": "vcpkg install openssl:arm-linux"},
-                {"openssl for arm(static)": "vcpkg install openssl:arm-linux-static"}
+                {
+                    "boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux",
+                    "boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static",
+                    "boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux",
+                    "boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static",
+                    "openssl for arm64(shared)": "vcpkg install openssl:arm64-linux",
+                    "openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static",
+                    "openssl for arm(shared)": "vcpkg install openssl:arm-linux",
+                    "openssl for arm(static)": "vcpkg install openssl:arm-linux-static"
+                }
             )
             # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
             # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
@@ -175,6 +181,7 @@ class Linux:
                     self.checkResult(result, key)
         self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
         self.writeVariables("PATH","export PATH=$PATH:/usr/bin/vcpkg/")
+        self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
         return 502
 
 
@@ -193,36 +200,39 @@ class Windows:
             "MSBuild": "winget install Microsoft.VisualStudio.2022.BuildTools --override \"--quiet --add Microsoft.VisualStudio.Workload.NativeDesktop\"",
             "vcpkg": "git clone https://github.com/microsoft/vcpkg && .\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics",
             "CMake": "winget install -e --id Kitware.CMake",
-            # "Boost": "vcpkg install boost asio x64-windows-static",
-            # "OpenSSL": "vcpkg install openssl x64-windows-static",
-            # "libpqxx": "vcpkg install libpqxx x64-windows-static",
             "NodeJS": "winget install -e --id OpenJS.NodeJS"
         }
         self.architecture = platform.machine().lower()
         if self.architecture == "x86_64" or self.architecture == "amd64":
             self.install_commands.update(
-                {"boost for x64(shared)": "vcpkg install boost:x64-windows asio:x64-windows"},
-                {"boost for x64(static)": "vcpkg install boost:x64-windows-static asio:x64-windows-static"},
-                {"openssl for x64(shared)": "vcpkg install openssl:x64-windows"},
-                {"openssl for x64(static)": "vcpkg install openssl:x64-windows-static"}
+                {
+                    "boost for x64(shared)": "vcpkg install boost:x64-windows asio:x64-windows",
+                    "boost for x64(static)": "vcpkg install boost:x64-windows-static asio:x64-windows-static",
+                    "openssl for x64(shared)": "vcpkg install openssl:x64-windows",
+                    "openssl for x64(static)": "vcpkg install openssl:x64-windows-static"
+                }
             )
         elif "86" in self.architecture:
             self.install_commands.update(
-                {"boost for x86(shared)": "vcpkg install boost:x86-windows asio::x86-windows"},
-                {"boost for x86(static)": "vcpkg install boost:x86-windows-static asio::x86-windows-static"},
-                {"openssl for x86(shared)": "vcpkg install openssl:x86-windows"},
-                {"openssl for x86(static)": "vcpkg install openssl:x86-windows-static"}
+                {
+                    "boost for x86(shared)": "vcpkg install boost:x86-windows asio::x86-windows",
+                    "boost for x86(static)": "vcpkg install boost:x86-windows-static asio::x86-windows-static",
+                    "openssl for x86(shared)": "vcpkg install openssl:x86-windows",
+                    "openssl for x86(static)": "vcpkg install openssl:x86-windows-static"
+                }
             )
         elif "arm" in self.architecture:
             self.install_commands.update(
-                {"boost for arm64(shared)": "vcpkg install boost:arm64-windows asio::arm64-windows"},
-                {"boost for arm64(static)": "vcpkg install boost:arm64-windows-static asio::arm64-windows-static"},
-                {"boost for arm(shared)": "vcpkg install boost:arm-windows asio:arm-windows"},
-                {"boost for arm(static)": "vcpkg install boost:arm-windows-static asio:arm-windows-static"},
-                {"openssl for arm64(shared)": "vcpkg install openssl:arm64-windows"},
-                {"openssl for arm64(static)": "vcpkg install openssl:arm64-windows-static"},
-                {"openssl for arm(shared)": "vcpkg install openssl:arm-windows"},
-                {"openssl for arm(static)": "vcpkg install openssl:arm-windows-static"}
+                {
+                    "boost for arm64(shared)": "vcpkg install boost:arm64-windows asio::arm64-windows",
+                    "boost for arm64(static)": "vcpkg install boost:arm64-windows-static asio::arm64-windows-static",
+                    "boost for arm(shared)": "vcpkg install boost:arm-windows asio:arm-windows",
+                    "boost for arm(static)": "vcpkg install boost:arm-windows-static asio:arm-windows-static",
+                    "openssl for arm64(shared)": "vcpkg install openssl:arm64-windows",
+                    "openssl for arm64(static)": "vcpkg install openssl:arm64-windows-static",
+                    "openssl for arm(shared)": "vcpkg install openssl:arm-windows",
+                    "openssl for arm(static)": "vcpkg install openssl:arm-windows-static"
+                }
             )
             
 
