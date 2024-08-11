@@ -11,8 +11,8 @@ class Linux:
         self.YUM_PACKAGES = (
             "epel-release boost-devel xterm wget make cmake gcc-c++ curl libcurl sqlite-devel openssl-devel gtest-devel gtest gmock gmock-devel nodejs postgresql libpqxx-devel postgresql-devel postgresql-libs"
         )
-        self.DEB_PACKAGES = "libboost-all-dev libasio-dev xterm wget openssl libssl-dev g++ gcc build-essential cmake make curl libcurl4-openssl-dev libjsoncpp-dev libfmt-dev libsqlite3-dev libgtest-dev googletest google-mock libgmock-dev libtbb-dev libzip-dev zlib1g-dev nodejs npm libpq-dev postgresql"
-        self.PACMAN_PACKAGES = "boost asio xterm wget jsoncpp gcc base-devel cmake gtest libcurl-compat libcurl-gnutls curl fmt sqlite sqlite-tcl zlib openssl libzip nodejs npm postgresql postgresql-libs"
+        self.DEB_PACKAGES = "libboost-all-dev libasio-dev xterm wget openssl libssl-dev g++ gcc build-essential cmake make curl libcurl4-openssl-dev libjsoncpp-dev libfmt-dev libsqlite3-dev libgtest-dev googletest google-mock libgmock-dev libtbb-dev libzip-dev nodejs npm libpq-dev postgresql"
+        self.PACMAN_PACKAGES = "boost asio xterm wget jsoncpp gcc base-devel cmake gtest libcurl-compat libcurl-gnutls curl fmt sqlite sqlite-tcl openssl libzip nodejs npm postgresql postgresql-libs"
         # self.ZYPPER_PACKAGES = "xterm wget libcurl-devel gcc-c++ cmake gtest gmock zlib-devel fmt-devel sqlite3-devel jsoncpp-devel"
         self.distribution = platform.freedesktop_os_release()["NAME"]
         self.architecture = platform.architecture()[0]
@@ -51,6 +51,69 @@ class Linux:
             # "openSUSE Leap": "zypper",
             # "openSUSE Tumbleweed": "zypper"
         }
+        self.check_functions = {
+            "vcpkg":self.checkVCpkg,
+        }
+        self.install_commands = {
+            "vcpkg": "cd /usr/bin/ && sudo git clone https://github.com/microsoft/vcpkg --depth 1 && sudo ./vcpkg/bootstrap-vcpkg.sh -disableMetrics && sudo chmod 777 /usr/bin/vcpkg/",
+            
+        }
+        self.architecture = platform.machine().lower()
+        if self.architecture == "x86_64" or self.architecture == "amd64":
+            self.install_commands.update(
+                {"boost for x64(shared)": "vcpkg install boost:x64-linux asio:x64-linux"},
+                {"boost for x64(static)": "vcpkg install boost:x64-linux-static asio:x64-linux-static"},
+                {"openssl for x64(shared)": "vcpkg install openssl:x64-linux"},
+                {"openssl for x64(static)": "vcpkg install openssl:x64-linux-static"}
+            )
+        elif "86" in self.architecture:
+            self.install_commands.update(
+                {"boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux"},
+                {"boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static"},
+                {"openssl for x86(shared)": "vcpkg install openssl:x86-linux"},
+                {"openssl for x86(static)": "vcpkg install openssl:x86-linux-static"}
+            )
+        elif "arm" in self.architecture:
+            self.install_commands.update(
+                {"boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux"},
+                {"boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static"},
+                {"boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux"},
+                {"boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static"},
+                {"openssl for arm64(shared)": "vcpkg install openssl:arm64-linux"},
+                {"openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static"},
+                {"openssl for arm(shared)": "vcpkg install openssl:arm-linux"},
+                {"openssl for arm(static)": "vcpkg install openssl:arm-linux-static"}
+            )
+            # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
+            # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
+            
+    def checkVCpkg(self)  -> bool:
+        os.chdir("C:\\")
+        if not os.path.exists("/usr/bin/vcpkg"):
+            if not len(os.listdir("/usr/bin/vcpkg")) > 0:
+                os.rmdir("/usr/bin/vcpkg")
+                return False
+        return True
+
+    def checkResult(self, result, nameProgram):
+        if result != 0:
+            print(delimiter)
+            print(f"\033[1;31m==> Failed to install {nameProgram}\033[0m\n")
+            print(delimiter)
+            return 502
+
+    def writeVariables(self,name : str,value : str):
+        profilePath = "/etc/profile"
+        command = f"sudo chmod 655 {profilePath}"
+        os.system(command)
+        new_str = f"export {name}={value}\n"
+        with open(profilePath, 'r+') as file:
+            content = file.read()
+            if new_str in content:
+                new_content = content.replace(new_str, "")
+            else:
+                with open(profilePath,"a+") as profileFile:
+                    profileFile.write(new_str)
 
     def start(self) -> int:
         if self.distribution == "CentOS Linux":
@@ -97,6 +160,21 @@ class Linux:
             for package in failed_packages:
                 print(f"{i}.{package}")
                 i += 1
+        for key in self.install_commands:
+                if key in self.check_functions:
+                    result_check = self.check_functions[key]()
+                    if result_check == False:
+                        print(delimiter)
+                        print(f"==> Installing {key}")
+                        result = os.system(self.install_commands[key])
+                        self.checkResult(result, key)
+                else:
+                    print(delimiter)
+                    print(f"==> Installing {key}")
+                    result = os.system(self.install_commands[key])
+                    self.checkResult(result, key)
+        self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
+        self.writeVariables("PATH","export PATH=$PATH:/usr/bin/vcpkg/")
         return 502
 
 
@@ -115,11 +193,38 @@ class Windows:
             "MSBuild": "winget install Microsoft.VisualStudio.2022.BuildTools --override \"--quiet --add Microsoft.VisualStudio.Workload.NativeDesktop\"",
             "vcpkg": "git clone https://github.com/microsoft/vcpkg && .\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics",
             "CMake": "winget install -e --id Kitware.CMake",
-            "Boost": "vcpkg install boost asio x64-windows-static",
-            "OpenSSL": "vcpkg install openssl x64-windows-static",
-            "libpqxx": "vcpkg install libpqxx x64-windows-static",
+            # "Boost": "vcpkg install boost asio x64-windows-static",
+            # "OpenSSL": "vcpkg install openssl x64-windows-static",
+            # "libpqxx": "vcpkg install libpqxx x64-windows-static",
             "NodeJS": "winget install -e --id OpenJS.NodeJS"
         }
+        self.architecture = platform.machine().lower()
+        if self.architecture == "x86_64" or self.architecture == "amd64":
+            self.install_commands.update(
+                {"boost for x64(shared)": "vcpkg install boost:x64-windows asio:x64-windows"},
+                {"boost for x64(static)": "vcpkg install boost:x64-windows-static asio:x64-windows-static"},
+                {"openssl for x64(shared)": "vcpkg install openssl:x64-windows"},
+                {"openssl for x64(static)": "vcpkg install openssl:x64-windows-static"}
+            )
+        elif "86" in self.architecture:
+            self.install_commands.update(
+                {"boost for x86(shared)": "vcpkg install boost:x86-windows asio::x86-windows"},
+                {"boost for x86(static)": "vcpkg install boost:x86-windows-static asio::x86-windows-static"},
+                {"openssl for x86(shared)": "vcpkg install openssl:x86-windows"},
+                {"openssl for x86(static)": "vcpkg install openssl:x86-windows-static"}
+            )
+        elif "arm" in self.architecture:
+            self.install_commands.update(
+                {"boost for arm64(shared)": "vcpkg install boost:arm64-windows asio::arm64-windows"},
+                {"boost for arm64(static)": "vcpkg install boost:arm64-windows-static asio::arm64-windows-static"},
+                {"boost for arm(shared)": "vcpkg install boost:arm-windows asio:arm-windows"},
+                {"boost for arm(static)": "vcpkg install boost:arm-windows-static asio:arm-windows-static"},
+                {"openssl for arm64(shared)": "vcpkg install openssl:arm64-windows"},
+                {"openssl for arm64(static)": "vcpkg install openssl:arm64-windows-static"},
+                {"openssl for arm(shared)": "vcpkg install openssl:arm-windows"},
+                {"openssl for arm(static)": "vcpkg install openssl:arm-windows-static"}
+            )
+            
 
     def checkMSBuild(self) -> bool:
         distributions = ["Enterprise", "Community", "Proffesional"]
@@ -178,7 +283,7 @@ class Windows:
             #     print(
             #         "For further development, Visual Studio or MSBuild is required.\nVisual Studio download link: https://visualstudio.microsoft.com/ru/vs/\nMSBuild download link: https://aka.ms/vs/17/release/vs_BuildTools.exe"
             #     )
-            return 0
+            return 502
         except Exception as error:
             print(error)
             return 502
@@ -242,7 +347,7 @@ class macOS:
                 for package in failed_packages:
                     print(f"{i}.{package}")
                     i += 1
-            return 0
+            return 502
         except Exception as error:
             print(error)
             return 502
