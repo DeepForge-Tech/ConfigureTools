@@ -1,7 +1,7 @@
 import platform
 import os
 import subprocess
-
+import shutil
 delimiter = "========================================================"
 current_dir = os.path.dirname(__file__)
 REQUIRED_NODEJS_VERSION = 16.0
@@ -118,11 +118,11 @@ class Linux:
             return 502
     def addProfile(self):
         shellScriptPath = "/usr/bin/ConfigureTools.sh"
-        os.replace(os.path.join(current_dir,"ConfigureTools.sh"),shellScriptPath)
+        shutil.copy(os.path.join(current_dir,"ConfigureTools.sh"),shellScriptPath)
 
     def addService(self):
         servicePath = "/etc/systemd/system/ConfigureTools.service"
-        os.replace(os.path.join(current_dir,"ConfigureTools"),servicePath)
+        shutil.copy(os.path.join(current_dir,"ConfigureTools.service"),servicePath)
         os.system(f"sudo systemctl daemon-reload && sudo chmod +x {servicePath} && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
 
 
