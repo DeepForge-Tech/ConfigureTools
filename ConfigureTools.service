@@ -1,0 +1,11 @@
+[Unit]
+Description=Run /etc/profile
+
+[Service]
+ExecStart=/usr/bin/ConfigureTools.sh
+ExecStopPost=/bin/echo "Service stopped."
+Type=simple
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

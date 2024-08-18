@@ -122,7 +122,7 @@ class Linux:
     def addService(self):
         servicePath = "/etc/systemd/system/ConfigureTools.service"
         os.replace(os.path.join(current_dir,"ConfigureTools.service"),servicePath)
-        os.system("sudo systemctl daemon-reload && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
+        os.system(f"sudo systemctl daemon-reload && sudo chmod +x {servicePath} && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
 
 
     def writeVariables(self,name : str,value : str):
