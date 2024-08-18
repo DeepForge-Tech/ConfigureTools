@@ -104,7 +104,6 @@ class Linux:
             # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
             # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
     def checkVCpkg(self)  -> bool:
-        os.chdir("C:\\")
         if not os.path.exists("/usr/bin/vcpkg"):
             if not len(os.listdir("/usr/bin/vcpkg")) > 0:
                 os.rmdir("/usr/bin/vcpkg")
