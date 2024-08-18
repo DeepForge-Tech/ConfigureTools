@@ -207,6 +207,7 @@ class Linux:
             self.install_commands.update({f"{library}(static)":command})
             command = f"vcpkg install {library}:{self.prefix_build}-dynamic"
             self.install_commands.update({f"{library}(shared)":command})
+        self.addService()
         return 502
 
 
@@ -304,7 +305,8 @@ class Windows:
             if len(os.listdir("C:\\vcpkg")) == 0:
                 os.rmdir("C:\\vcpkg")
                 return False
-        return True
+            else: return True
+        return False
 
     def checkResult(self, result, nameProgram):
         if result != 0:
