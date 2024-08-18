@@ -187,11 +187,6 @@ class Linux:
         self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
         self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
         self.addService()
-        for library in self.vcpkg_libraries:
-            command = f"vcpkg install {library}:{self.prefix_build}"
-            self.install_commands.update({f"{library}(static)":command})
-            command = f"vcpkg install {library}:{self.prefix_build}-dynamic"
-            self.install_commands.update({f"{library}(shared)":command})
 
         for key in self.install_commands:
                 if key in self.check_functions:
@@ -207,6 +202,11 @@ class Linux:
                     result = os.system(self.install_commands[key])
                     self.checkResult(result, key)
         
+        for library in self.vcpkg_libraries:
+            command = f"vcpkg install {library}:{self.prefix_build}"
+            self.install_commands.update({f"{library}(static)":command})
+            command = f"vcpkg install {library}:{self.prefix_build}-dynamic"
+            self.install_commands.update({f"{library}(shared)":command})
         return 502
 
 
