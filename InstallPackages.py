@@ -108,7 +108,8 @@ class Linux:
             if len(os.listdir("/usr/bin/vcpkg")) == 0:
                 os.rmdir("/usr/bin/vcpkg")
                 return False
-        return True
+            else: return True
+        return False
 
     def checkResult(self, result, nameProgram):
         if result != 0:
@@ -186,7 +187,6 @@ class Linux:
         self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
         self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
         self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
-        self.addService()
 
         for key in self.install_commands:
                 if key in self.check_functions:
