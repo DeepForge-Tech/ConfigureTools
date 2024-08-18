@@ -59,40 +59,50 @@ class Linux:
             
         }
         self.architecture = platform.machine().lower()
+        self.vcpkg_libraries = {
+            "boost",
+            "asio",
+            "fmt",
+            "cppcoro",
+            "jsoncpp"
+        }
+        self.prefix_build = ""
         if self.architecture == "x86_64" or self.architecture == "amd64":
-            self.install_commands.update(
-                {
-                    "boost for x64(static)": "vcpkg install boost:x64-linux asio:x64-linux",
-                    "boost for x64(shared)": "vcpkg install boost:x64-linux-static asio:x64-linux-dynamic",
-                    "openssl for x64(static)": "vcpkg install openssl:x64-linux",
-                    "openssl for x64(shared)": "vcpkg install openssl:x64-linux-dynamic"
-                }
-            )
+            # self.install_commands.update(
+            #     {
+            #         "boost for x64(static)": "vcpkg install boost:x64-linux asio:x64-linux",
+            #         "boost for x64(shared)": "vcpkg install boost:x64-linux-static asio:x64-linux-dynamic",
+            #         "openssl for x64(static)": "vcpkg install openssl:x64-linux",
+            #         "openssl for x64(shared)": "vcpkg install openssl:x64-linux-dynamic"
+            #     }
+            # )
+            self.prefix_build = "x64-linux"
         elif "86" in self.architecture:
-            self.install_commands.update(
-                {
-                    "boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux",
-                    "boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static",
-                    "openssl for x86(shared)": "vcpkg install openssl:x86-linux",
-                    "openssl for x86(static)": "vcpkg install openssl:x86-linux-static"
-                }
-            )
+            self.prefix_build = "x86-linux"
+            # self.install_commands.update(
+            #     {
+            #         "boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux",
+            #         "boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static",
+            #         "openssl for x86(shared)": "vcpkg install openssl:x86-linux",
+            #         "openssl for x86(static)": "vcpkg install openssl:x86-linux-static"
+            #     }
+            # )
         elif "arm" in self.architecture:
-            self.install_commands.update(
-                {
-                    "boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux",
-                    "boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static",
-                    "boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux",
-                    "boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static",
-                    "openssl for arm64(shared)": "vcpkg install openssl:arm64-linux",
-                    "openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static",
-                    "openssl for arm(shared)": "vcpkg install openssl:arm-linux",
-                    "openssl for arm(static)": "vcpkg install openssl:arm-linux-static"
-                }
-            )
+            self.prefix_build = "arm64-linux"
+            # self.install_commands.update(
+            #     {
+            #         "boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux",
+            #         "boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static",
+            #         "boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux",
+            #         "boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static",
+            #         "openssl for arm64(shared)": "vcpkg install openssl:arm64-linux",
+            #         "openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static",
+            #         "openssl for arm(shared)": "vcpkg install openssl:arm-linux",
+            #         "openssl for arm(static)": "vcpkg install openssl:arm-linux-static"
+            #     }
+            # )
             # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
             # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
-            
     def checkVCpkg(self)  -> bool:
         os.chdir("C:\\")
         if not os.path.exists("/usr/bin/vcpkg"):
@@ -166,6 +176,15 @@ class Linux:
             for package in failed_packages:
                 print(f"{i}.{package}")
                 i += 1
+        self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
+        self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
+        self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
+        for library in self.vcpkg_libraries:
+            command = f"vcpkg install {library}:{self.prefix_build}"
+            self.install_commands.update({f"{library}(static)":command})
+            command = f"vcpkg install {library}:{self.prefix_build}-dynamic"
+            self.install_commands.update({f"{library}(shared)":command})
+
         for key in self.install_commands:
                 if key in self.check_functions:
                     result_check = self.check_functions[key]()
@@ -179,9 +198,7 @@ class Linux:
                     print(f"==> Installing {key}")
                     result = os.system(self.install_commands[key])
                     self.checkResult(result, key)
-        self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
-        self.writeVariables("PATH","export PATH=$PATH:/usr/bin/vcpkg/")
-        self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
+        
         return 502
 
 
@@ -203,37 +220,50 @@ class Windows:
             "NodeJS": "winget install -e --id OpenJS.NodeJS"
         }
         self.architecture = platform.machine().lower()
+        self.vcpkg_libraries = {
+            "boost",
+            "asio",
+            "fmt",
+            "cppcoro",
+            "jsoncpp"
+        }
+        self.prefix_build = ""
         if self.architecture == "x86_64" or self.architecture == "amd64":
-            self.install_commands.update(
-                {
-                    "boost for x64(shared)": "vcpkg install boost:x64-windows asio:x64-windows",
-                    "boost for x64(static)": "vcpkg install boost:x64-windows-static asio:x64-windows-static",
-                    "openssl for x64(shared)": "vcpkg install openssl:x64-windows",
-                    "openssl for x64(static)": "vcpkg install openssl:x64-windows-static"
-                }
-            )
+            # self.install_commands.update(
+            #     {
+            #         "boost for x64(static)": "vcpkg install boost:x64-linux asio:x64-linux",
+            #         "boost for x64(shared)": "vcpkg install boost:x64-linux-static asio:x64-linux-dynamic",
+            #         "openssl for x64(static)": "vcpkg install openssl:x64-linux",
+            #         "openssl for x64(shared)": "vcpkg install openssl:x64-linux-dynamic"
+            #     }
+            # )
+            self.prefix_build = "x64-linux"
         elif "86" in self.architecture:
-            self.install_commands.update(
-                {
-                    "boost for x86(shared)": "vcpkg install boost:x86-windows asio::x86-windows",
-                    "boost for x86(static)": "vcpkg install boost:x86-windows-static asio::x86-windows-static",
-                    "openssl for x86(shared)": "vcpkg install openssl:x86-windows",
-                    "openssl for x86(static)": "vcpkg install openssl:x86-windows-static"
-                }
-            )
+            self.prefix_build = "x86-linux"
+            # self.install_commands.update(
+            #     {
+            #         "boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux",
+            #         "boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static",
+            #         "openssl for x86(shared)": "vcpkg install openssl:x86-linux",
+            #         "openssl for x86(static)": "vcpkg install openssl:x86-linux-static"
+            #     }
+            # )
         elif "arm" in self.architecture:
-            self.install_commands.update(
-                {
-                    "boost for arm64(shared)": "vcpkg install boost:arm64-windows asio::arm64-windows",
-                    "boost for arm64(static)": "vcpkg install boost:arm64-windows-static asio::arm64-windows-static",
-                    "boost for arm(shared)": "vcpkg install boost:arm-windows asio:arm-windows",
-                    "boost for arm(static)": "vcpkg install boost:arm-windows-static asio:arm-windows-static",
-                    "openssl for arm64(shared)": "vcpkg install openssl:arm64-windows",
-                    "openssl for arm64(static)": "vcpkg install openssl:arm64-windows-static",
-                    "openssl for arm(shared)": "vcpkg install openssl:arm-windows",
-                    "openssl for arm(static)": "vcpkg install openssl:arm-windows-static"
-                }
-            )
+            self.prefix_build = "arm64-linux"
+            # self.install_commands.update(
+            #     {
+            #         "boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux",
+            #         "boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static",
+            #         "boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux",
+            #         "boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static",
+            #         "openssl for arm64(shared)": "vcpkg install openssl:arm64-linux",
+            #         "openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static",
+            #         "openssl for arm(shared)": "vcpkg install openssl:arm-linux",
+            #         "openssl for arm(static)": "vcpkg install openssl:arm-linux-static"
+            #     }
+            # )
+            # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
+            # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
             
 
     def checkMSBuild(self) -> bool:
