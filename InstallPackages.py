@@ -187,7 +187,7 @@ class Linux:
         self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
         self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
         self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
-
+        self.writeVariables("VCPKG_FORCE_SYSTEM_BINARIES", "1")
         for key in self.install_commands:
                 if key in self.check_functions:
                     result_check = self.check_functions[key]()
