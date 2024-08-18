@@ -114,8 +114,16 @@ class Linux:
         if result != 0:
             print(delimiter)
             print(f"\033[1;31m==> Failed to install {nameProgram}\033[0m\n")
-            print(delimiter)
             return 502
+    def addProfile(self):
+        shellScriptPath = "/usr/bin/ConfigureTools.sh"
+        os.replace(os.path.join(current_dir,"ConfigureTools.sh"),shellScriptPath)
+
+    def addService(self):
+        servicePath = "/etc/systemd/system/ConfigureTools.service"
+        os.replace(os.path.join(current_dir,"ConfigureTools.service"),servicePath)
+        os.system("sudo systemctl daemon-reload && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
+
 
     def writeVariables(self,name : str,value : str):
         profilePath = "/etc/profile"
@@ -178,6 +186,7 @@ class Linux:
         self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
         self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
         self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
+        self.addService()
         for library in self.vcpkg_libraries:
             command = f"vcpkg install {library}:{self.prefix_build}"
             self.install_commands.update({f"{library}(static)":command})
@@ -301,7 +310,6 @@ class Windows:
         if result != 0:
             print(delimiter)
             print(f"\033[1;31m==> Failed to install {nameProgram}\033[0m\n")
-            print(delimiter)
             return 502
 
     def start(self) -> int:
