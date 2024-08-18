@@ -121,7 +121,7 @@ class Linux:
 
     def addService(self):
         servicePath = "/etc/systemd/system/ConfigureTools.service"
-        os.replace(os.path.join(current_dir,"ConfigureTools.service"),servicePath)
+        os.replace(os.path.join(current_dir,"ConfigureTools"),servicePath)
         os.system(f"sudo systemctl daemon-reload && sudo chmod +x {servicePath} && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
 
 
