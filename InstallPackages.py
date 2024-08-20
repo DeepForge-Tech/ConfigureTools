@@ -59,13 +59,13 @@ class Linux:
             
         }
         self.architecture = platform.machine().lower()
-        self.vcpkg_libraries = {
+        self.vcpkg_libraries = [
             "boost",
             "asio",
             "fmt",
             "cppcoro",
             "jsoncpp"
-        }
+        ]
         self.prefix_build = ""
         if self.architecture == "x86_64" or self.architecture == "amd64":
             # self.install_commands.update(
