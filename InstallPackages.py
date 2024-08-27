@@ -52,79 +52,20 @@ class Linux:
             # "openSUSE Tumbleweed": "zypper"
         }
         self.check_functions = {
-            "vcpkg":self.checkVCpkg,
         }
         self.install_commands = {
-            "vcpkg": "cd /usr/bin/ && sudo git clone https://github.com/microsoft/vcpkg --depth 1 && sudo ./vcpkg/bootstrap-vcpkg.sh -disableMetrics && sudo chmod 777 /usr/bin/vcpkg/",
-            
+            "boost (static)": "cd /usr/local/ && sudo mkdir Libraries/lib/boost-static",
+            "boost (shared)": "cd /usr/local/ && sudo mkdir Libraries/lib/boost-shared"
         }
         self.architecture = platform.machine().lower()
-        self.vcpkg_libraries = [
-            "boost",
-            "asio",
-            "fmt",
-            "cppcoro",
-            "jsoncpp"
-        ]
-        self.prefix_build = ""
-        if self.architecture == "x86_64" or self.architecture == "amd64":
-            # self.install_commands.update(
-            #     {
-            #         "boost for x64(static)": "vcpkg install boost:x64-linux asio:x64-linux",
-            #         "boost for x64(shared)": "vcpkg install boost:x64-linux-static asio:x64-linux-dynamic",
-            #         "openssl for x64(static)": "vcpkg install openssl:x64-linux",
-            #         "openssl for x64(shared)": "vcpkg install openssl:x64-linux-dynamic"
-            #     }
-            # )
-            self.prefix_build = "x64-linux"
-        elif "86" in self.architecture:
-            self.prefix_build = "x86-linux"
-            # self.install_commands.update(
-            #     {
-            #         "boost for x86(shared)": "vcpkg install boost:x86-linux asio:x86-linux",
-            #         "boost for x86(static)": "vcpkg install boost:x86-linux-static asio:x86-linux-static",
-            #         "openssl for x86(shared)": "vcpkg install openssl:x86-linux",
-            #         "openssl for x86(static)": "vcpkg install openssl:x86-linux-static"
-            #     }
-            # )
-        elif "arm" in self.architecture:
-            self.prefix_build = "arm64-linux"
-            # self.install_commands.update(
-            #     {
-            #         "boost for arm64(shared)": "vcpkg install boost:arm64-linux asio:arm64-linux",
-            #         "boost for arm64(static)": "vcpkg install boost:arm64-linux-static asio:arm64-linux-static",
-            #         "boost for arm(shared)": "vcpkg install boost:arm-linux asio:arm-linux",
-            #         "boost for arm(static)": "vcpkg install boost:arm-linux-static asio:arm-linux-static",
-            #         "openssl for arm64(shared)": "vcpkg install openssl:arm64-linux",
-            #         "openssl for arm64(static)": "vcpkg install openssl:arm64-linux-static",
-            #         "openssl for arm(shared)": "vcpkg install openssl:arm-linux",
-            #         "openssl for arm(static)": "vcpkg install openssl:arm-linux-static"
-            #     }
-            # )
-            # self.install_commands.update({"boost for arm64ec(shared)": "vcpkg install boost:arm64ec-linux"})
-            # self.install_commands.update({"boost for arm64ec(static)": "vcpkg install boost:arm64ec-linux-static"})
-    def checkVCpkg(self)  -> bool:
-        if os.path.exists("/usr/bin/vcpkg"):
-            if len(os.listdir("/usr/bin/vcpkg")) == 0:
-                os.rmdir("/usr/bin/vcpkg")
-                return False
-            else: return True
-        return False
 
     def checkResult(self, result, nameProgram):
         if result != 0:
             print(delimiter)
             print(f"\033[1;31m==> Failed to install {nameProgram}\033[0m\n")
             return 502
-    def addProfile(self):
-        shellScriptPath = "/usr/bin/ConfigureTools.sh"
-        shutil.copy(os.path.join(current_dir,"ConfigureTools.sh"),shellScriptPath)
-
-    def addService(self):
-        servicePath = "/etc/systemd/system/ConfigureTools.service"
-        shutil.copy(os.path.join(current_dir,"ConfigureTools.service"),servicePath)
-        os.system(f"sudo systemctl daemon-reload && sudo chmod +x {servicePath} && sudo systemctl enable ConfigureTools.service && sudo systemctl start ConfigureTools.service")
-
+    def exportVar(self):
+        pass
 
     def writeVariables(self,name : str,value : str):
         profilePath = "/etc/profile"
@@ -184,10 +125,7 @@ class Linux:
             for package in failed_packages:
                 print(f"{i}.{package}")
                 i += 1
-        self.writeVariables("VCPKG_ROOT", "/usr/bin/vcpkg/")
-        self.writeVariables("PATH","$PATH:/usr/bin/vcpkg/")
         self.writeVariables("PKG_CONFIG_PATH","/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH")
-        self.writeVariables("VCPKG_FORCE_SYSTEM_BINARIES", "1")
         for key in self.install_commands:
                 if key in self.check_functions:
                     result_check = self.check_functions[key]()
@@ -201,13 +139,6 @@ class Linux:
                     print(f"==> Installing {key}")
                     result = os.system(self.install_commands[key])
                     self.checkResult(result, key)
-        
-        for library in self.vcpkg_libraries:
-            command = f"vcpkg install {library}:{self.prefix_build}"
-            self.install_commands.update({f"{library}(static)":command})
-            command = f"vcpkg install {library}:{self.prefix_build}-dynamic"
-            self.install_commands.update({f"{library}(shared)":command})
-        self.addService()
         return 502
 
 
@@ -218,7 +149,6 @@ class Windows:
         self.architecture = platform.architecture()[0]
         self.check_functions = {
             "MSBuild":self.checkMSBuild,
-            "vcpkg":self.checkVCpkg,
             "NodeJS":self.checkNodeJS
         }
         self.install_commands = {
